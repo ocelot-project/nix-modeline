@@ -1,0 +1,83 @@
+* nix-modeline - live Nix builder status in your Emacs modeline
+~nix-modeline~ is an Emacs minor mode that displays how many
+[[https://nixos.org][Nix]] instantiations are in progress on your modeline. It's very useful for 
+[[https://github.com/target/lorri][lorri]] and [[https://github.com/nix-community/nix-direnv][nix-direnv]] users as a UI for which projects are building in the
+background, and fills in for both Nix and lorri's lack of a stable event
+notification API. For CPU and power efficency, ~nix-modeline~ relies on the
+[[http://eradman.com/entrproject/][entr command line utility]] to monitor Nix, and both its backend process and its
+Emacs Lisp interface sleep until the instant a Nix operation begins or ends.
+
+** Installation
+*** Declarative Install
+- Modify your Nix configuration to pull in the ~nix-modeline~ overlay (for
+  better expression caching, replace ~master~ in the URL with the latest commit
+  in this repo, and add a valid ~sha256~ attribute under that):
+#+BEGIN_SRC nix
+  nixpkgs.overlays = [
+    (import (builtins.fetchTarball {
+      url = "https://github.com/ocelot-project/nix-modeline/archive/master.tar.gz";
+    }))
+  ];
+#+END_SRC
+
+- After that, override your ~emacs~ derivation with one that pulls in the
+  ~nix-modeline~ package. For example, in ~/etc/nixos/configuration.nix~ on a
+  NixOS system:
+#+BEGIN_SRC nix
+  environment.systemPackages = [
+    # Replace any existing emacs derivation with:
+    (pkgs.emacsPackagesGen pkgs.emacs).emacsWithPackages (epkgs: [
+      pkgs.nix-modeline
+    ])
+  ];
+#+END_SRC
+
+*** Imperative Install
+- First, install ~entr~:
+#+BEGIN_SRC bash
+  nix-env -i entr
+#+END_SRC
+
+- Then clone ~nix-modeline~:
+#+BEGIN_SRC bash
+git clone https://github.com/ocelot-project/nix-modeline.git
+#+END_SRC
+
+- Finally, add the directory containing ~nix-modeline~ to your Emacs
+  ~load-path~:
+#+BEGIN_SRC emacs-lisp
+  (push "/path/to/nix-modeline" load-path)
+#+END_SRC
+
+- Note that Emacs distros like Doom, Spacemacs, and Prelude have their own way
+  to install packages. See your distro's manual for information.
+  
+** Usage
+- For plain Emacs, just ~(require 'nix-modeline)~ and execute
+  ~(nix-modeline-mode)~ to enable the minor mode.
+- Doom, Spacemacs, Prelude, and other Emacs distros have more efficient ways to
+  pull in ~nix-modeline~. See your distro's manual on how to configure packages.
+
+** Configuration
+~nix-modeline~ has a lot of configuration options. See the `defcustom`
+expressions in `nix-modeline.el` for a complete list. Some of the most important
+options are:
+
+| Option                | Description                                          |
+|-----------------------+------------------------------------------------------|
+| ~nix-modeline-*-text~ | Change the modeline text for a given Nix state       |
+| ~nix-modeline-*-face~ | Change the modeline text color for a given Nix state |
+
+** FAQ
+*** How can I hide ~nix-modeline~ when Nix is idle?
+Set ~nix-modeline-idle-text~ to ~""~, and Emacs won't render ~nix-modeline~
+when Nix isn't doing anything.
+
+*** I'm not seeing builds for other users or ~nixos-rebuild switch~
+By default, ~nix-modeline~ only shows your Nix processes. To change that, set
+~nix-modeline-users~ to either ~'self-and-root~ (which will include
+~nixos-rebuild switch~ and other ~root~-owned Nix processes) or ~'all~.
+
+*** Can I tap into ~nix-modeline~'s event stream?
+You can! Use ~nix-modeline-hook~, which runs whenever a Nix operation begins or
+ends. Note that this hook only works when ~nix-modeline~ is enabled.
