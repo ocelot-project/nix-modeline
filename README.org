@@ -7,6 +7,11 @@ notification API. For CPU and power efficency, ~nix-modeline~ relies on the
 [[http://eradman.com/entrproject/][entr command line utility]] to monitor Nix, and both its backend process and its
 Emacs Lisp interface sleep until the instant a Nix operation begins or ends.
 
+** Compatibility
+~nix-modeline~ is compatible with any Linux system running Nix including NixOS,
+as well as macOS. It may work under Windows Subsystem for Linux, but your
+mileage will vary.
+
 ** Installation
 *** Declarative Install
 - Modify your Nix configuration to pull in the ~nix-modeline~ overlay (for
@@ -81,3 +86,9 @@ By default, ~nix-modeline~ only shows your Nix processes. To change that, set
 *** Can I tap into ~nix-modeline~'s event stream?
 You can! Use ~nix-modeline-hook~, which runs whenever a Nix operation begins or
 ends. Note that this hook only works when ~nix-modeline~ is enabled.
+
+*** Is there any way to monitor specific projects, or know what's building?
+Unfortunately not. Nix, lorri, and direnv all lack a stable event stream I can
+tap into, as well as any usable standardized operation logs. If there's enough
+popular demand for the feature, getting an event stream implemented in Nix isn't
+out of the realm of possibility.

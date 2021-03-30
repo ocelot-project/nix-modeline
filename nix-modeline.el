@@ -81,12 +81,24 @@ Usually, setting this variable only makes sense in multi-user Nix environments.
                  (const :tag "Your User and root" 'self-and-root)
                  (const :tag "All Users" 'all)))
 
-(defcustom nix-modeline-process-regex "(nix-build)|(nix-instantiate)"
+(defcustom nix-modeline-process-regex (pcase system-type
+                                        ('darwin "nix")
+                                        (_ "(nix-build)|(nix-instantiate)"))
   "A regex of process names that should count as Nix builders.
 
 nix-modeline passes this regex to pgrep and uses the number of matching
 processes to report how many Nix builders are in progress."
   :type 'regexp)
+
+(defcustom nix-modeline-pgrep-string (pcase system-type
+                                       ('darwin "pgrep %s '%s' | wc -l")
+                                       (_ "pgrep %s -c '%s'"))
+  "The pgrep command line that nix-modeline should use.
+
+Note: the first %s in this variable gets replaced by the value of
+`nix-modeline--pgrep-users', and the second %s gets replaced by the value of
+`nix-modeline-process-regex'."
+  :type 'string)
 
 (defcustom nix-modeline-hook nil
   "List of functions to be called when nix-modeline updates."
@@ -123,10 +135,11 @@ processes to report how many Nix builders are in progress."
 (defun nix-modeline--callback (process output)
   "Update nix-modeline based on the output of its process."
   (ignore process)
-  (dolist (num-builders (split-string output))
+  (dolist (num-builders (split-string output nil 'omit-nulls))
     (nix-modeline--update (string-to-number num-builders))))
 
 (defun nix-modeline--sentinel (process event)
+  "Alerts the user if nix-modeline's process crashes."
   (ignore event)
   (unless (process-live-p process)
     (setq nix-modeline--status-text (propertize nix-modeline-error-text
@@ -135,26 +148,37 @@ processes to report how many Nix builders are in progress."
 (defun nix-modeline--pgrep-users ()
   "Convert a nix-modeline users setting into a pgrep argument."
   (pcase nix-modeline-users
-    ('self "-u $(id -u)")
-    ('self-and-root "-u $(id -u) -u 0")
+    ('self "-U $(id -u)")
+    ('self-and-root "-U $(id -u) -U 0")
     ('all "")))
 
 (defun nix-modeline--start-process ()
     "Start nix-modeline's Nix watcher process."
-    (setq nix-modeline--process (make-process
-                                 :name "Nix Process Watcher"
-                                 :buffer nil
-                                 :command (list shell-file-name
-                                                shell-command-switch
-                                                (string-join
-                                                 (list
-                                                  "ls" (string-join nix-modeline-trigger-files " ") "|"
-                                                  nix-modeline-entr-command "pgrep"
-                                                  (nix-modeline--pgrep-users) "-c"
-                                                  (format "'%s'" nix-modeline-process-regex)) " "))
-                                 :filter 'nix-modeline--callback
-                                 :sentinel 'nix-modeline--sentinel))
-  (set-process-query-on-exit-flag nix-modeline--process nil))
+    (let ((process-connection-type nil))
+      (setq nix-modeline--process (make-process
+                                   :name "Nix Process Watcher"
+                                   :buffer nil
+                                   :command
+                                   (list shell-file-name
+                                         shell-command-switch
+                                         (string-join
+                                          (list
+                                           "while [ true ]; do"
+                                           "printf" (string-join
+                                                     nix-modeline-trigger-files
+                                                     "\\n")
+                                           "|"
+                                           nix-modeline-entr-command "-dns"
+                                           (format "\"%s\""
+                                                   (format
+                                                    nix-modeline-pgrep-string
+                                                    (nix-modeline--pgrep-users)
+                                                    nix-modeline-process-regex))
+                                                    "2>/dev/null"
+                                                    "; done") " "))
+                                   :filter 'nix-modeline--callback
+                                   :sentinel 'nix-modeline--sentinel)))
+    (set-process-query-on-exit-flag nix-modeline--process nil))
 
 ;;;###autoload
 (define-minor-mode nix-modeline-mode
