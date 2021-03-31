@@ -81,9 +81,7 @@ Usually, setting this variable only makes sense in multi-user Nix environments.
                  (const :tag "Your User and root" 'self-and-root)
                  (const :tag "All Users" 'all)))
 
-(defcustom nix-modeline-process-regex (pcase system-type
-                                        ('darwin "nix")
-                                        (_ "(nix-build)|(nix-instantiate)"))
+(defcustom nix-modeline-process-regex "(nix-build)|(nix-instantiate)"
   "A regex of process names that should count as Nix builders.
 
 nix-modeline passes this regex to pgrep and uses the number of matching
