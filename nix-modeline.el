@@ -4,6 +4,7 @@
 
 ;; Version: 1.0.0
 ;; Author: Jordan Mulcahey <snhjordy@gmail.com>
+;; Description: Show in-progress Nix evaluations on your modeline
 ;; URL: https://github.com/ocelot-project/nix-modeline
 ;; Keywords: processes, unix, tools
 ;; Package-Requires: ((emacs "25.1"))
