@@ -2,8 +2,11 @@
 
 ;; Copyright (C) 2021 Jordan Mulcahey
 
+;; Version: 1.0.0
 ;; Author: Jordan Mulcahey <snhjordy@gmail.com>
+;; URL: https://github.com/ocelot-project/nix-modeline
 ;; Keywords: processes, unix, tools
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -121,7 +124,10 @@ Note: the first %s in this variable gets replaced by the value of
   "The string representing the current Nix builder status.")
 
 (defun nix-modeline--update (num-builders)
-  "Update nix-modeline's text and force redisplay all modelines."
+  "Update nix-modeline's text and force redisplay all modelines.
+
+NUM-BUILDERS is a string from the nix-modeline child process representing the
+number of Nix builder processes it saw running."
   (setq nix-modeline--status-text (pcase num-builders
                                     (0 (propertize nix-modeline-idle-text
                                                    'face 'nix-modeline-idle-face))
@@ -131,13 +137,13 @@ Note: the first %s in this variable gets replaced by the value of
   (force-mode-line-update 'all))
 
 (defun nix-modeline--callback (process output)
-  "Update nix-modeline based on the output of its process."
+  "Update nix-modeline based on the OUTPUT of its PROCESS."
   (ignore process)
   (dolist (num-builders (split-string output nil 'omit-nulls))
     (nix-modeline--update (string-to-number num-builders))))
 
 (defun nix-modeline--sentinel (process event)
-  "Alerts the user if nix-modeline's process crashes."
+  "Inspects EVENT, and alerts the user if nix-modeline's PROCESS crashes."
   (ignore event)
   (unless (process-live-p process)
     (setq nix-modeline--status-text (propertize nix-modeline-error-text
