@@ -101,6 +101,13 @@ Note: the first %s in this variable gets replaced by the value of
 `nix-modeline-process-regex'."
   :type 'string)
 
+(defcustom nix-modeline-delay 0.025
+  "The delay between when nix-modeline triggers and when it updates.
+
+This value is in seconds. Short (microsecond) delays help prevent race
+conditions in nix-modeline during lengthy Nix builds."
+  :type 'number)
+
 (defcustom nix-modeline-hook nil
   "List of functions to be called when nix-modeline updates."
   :type 'hook)
@@ -173,7 +180,8 @@ number of Nix builder processes it saw running."
                                                      "\\n")
                                            "|"
                                            nix-modeline-entr-command "-dns"
-                                           (format "\"%s\""
+                                           (format "\"sleep %s; %s\""
+                                                   nix-modeline-delay
                                                    (format
                                                     nix-modeline-pgrep-string
                                                     (nix-modeline--pgrep-users)
