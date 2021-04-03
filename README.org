@@ -3,14 +3,15 @@
 [[https://nixos.org][Nix]] instantiations are in progress on your modeline. It's very useful for 
 [[https://github.com/target/lorri][lorri]] and [[https://github.com/nix-community/nix-direnv][nix-direnv]] users as a UI for which projects are building in the
 background, and fills in for both Nix and lorri's lack of a stable event
-notification API. For CPU and power efficency, ~nix-modeline~ relies on the
-[[http://eradman.com/entrproject/][entr command line utility]] to monitor Nix, and both its backend process and its
-Emacs Lisp interface sleep until the instant a Nix operation begins or ends.
+notification API. For CPU and power efficency, ~nix-modeline~ relies on Emacs'
+[[https://www.gnu.org/software/emacs/manual/html_node/elisp/File-Notifications.html][built-in ~filenotify~ library]] to monitor Nix, which lets it sleep until the
+instant a Nix operation begins or ends.
 
 ** Compatibility
 ~nix-modeline~ is compatible with any Linux system running Nix including NixOS,
 as well as macOS. It may work under Windows Subsystem for Linux, but your
-mileage will vary.
+mileage will vary. The ~nix-modeline-process-counter~ variable is worth looking
+at when running on an unsupported operating system.
 
 ** Installation
 *** Declarative Install
@@ -38,17 +39,12 @@ mileage will vary.
 #+END_SRC
 
 *** Imperative Install
-- First, install ~entr~:
-#+BEGIN_SRC bash
-  nix-env -i entr
-#+END_SRC
-
-- Then clone ~nix-modeline~:
+- First, clone ~nix-modeline~:
 #+BEGIN_SRC bash
 git clone https://github.com/ocelot-project/nix-modeline.git
 #+END_SRC
 
-- Finally, add the directory containing ~nix-modeline~ to your Emacs
+- Then add the directory containing ~nix-modeline~ to your Emacs
   ~load-path~:
 #+BEGIN_SRC emacs-lisp
   (push "/path/to/nix-modeline" load-path)
@@ -92,3 +88,15 @@ Unfortunately not. Nix, lorri, and direnv all lack a stable event stream I can
 tap into, as well as any usable standardized operation logs. If there's enough
 popular demand for the feature, getting an event stream implemented in Nix isn't
 out of the realm of possibility.
+
+*** I like this idea, but I don't use Emacs.
+That's a shame. Previous iterations of ~nix-modeline~ utilized a shell scripting
+oriented approach, based around [[http://eradman.com/entrproject/][~entr~]]:
+#+begin_src bash
+while [ true ]; do
+    echo /nix/var/nix/db/db.sqlite | entr -dns "sleep 0.025; pgrep -U $(id -u)";
+done
+#+end_src
+
+This should be portable to other editors like ~vim~ and vscode, or to tools that
+support displaying the output of a shell script as a widget.
