@@ -80,7 +80,7 @@ Usually, setting this variable only makes sense in multi-user Nix environments.
                  (const :tag "Your User and root" 'self-and-root)
                  (const :tag "All Users" 'all)))
 
-(defcustom nix-modeline-process-regex "(nix-build)|(nix-instantiate)"
+(defcustom nix-modeline-process-regex "\\(nix-build\\)\\|\\(nix-instantiate\\)"
   "A regex of process names that should count as Nix builders.
 
 nix-modeline  uses the number of matching processes to report how many Nix
@@ -189,7 +189,7 @@ we handle here."
      :buffer nil
      :command (split-string (format nix-modeline-pgrep-string
                                     (nix-modeline--pgrep-users)
-                                    nix-modeline-process-regex)
+                                    (string-replace "\\" "" nix-modeline-process-regex))
                             nil 'omit-nulls)
      :filter 'nix-modeline--pgrep-filter
      :sentinel 'nix-modeline--pgrep-sentinel
@@ -208,6 +208,8 @@ we handle here."
 
 (defun nix-modeline--callback ()
   "On a watch event, select a callback implementation."
+  (when nix-modeline-mode
+    (nix-modeline--start-watchers))
   (pcase nix-modeline-process-counter
     ('lisp (nix-modeline--pure-callback))
     ('pgrep (nix-modeline--pgrep-callback))))
@@ -216,20 +218,24 @@ we handle here."
   "Start watchers for the paths in `nix-modeline-trigger-files'."
   (setq nix-modeline--watchers
         (mapcar (lambda (path)
-                  (and (timerp nix-modeline--timer)
-                       (cancel-timer nix-modeline--timer))
                   (file-notify-add-watch path
                                          '(change)
-                                         (lambda (_event)
-                                           (run-with-timer nix-modeline-delay
-                                                           nil
-                                                           #'nix-modeline--callback))))
+                                         (lambda (event)
+                                           (unless (or (eq (cadr event) 'stopped)
+                                                       (not (file-notify-valid-p (car event))))
+                                             (nix-modeline--stop-watchers)
+                                             (and (timerp nix-modeline--timer)
+                                                  (cancel-timer nix-modeline--timer))
+                                             (setq nix-modeline--timer (run-with-timer nix-modeline-delay
+                                                                                       nil
+                                                                                       #'nix-modeline--callback))))))
                 nix-modeline-trigger-files)))
 
 (defun nix-modeline--stop-watchers ()
   "Stop the watchers in `nix-modeline--watchers'."
   (dolist (watcher nix-modeline--watchers)
-    (file-notify-rm-watch watcher)))
+    (file-notify-rm-watch watcher))
+  (setq nix-modeline--watchers '()))
 
 ;;;###autoload
 (define-minor-mode nix-modeline-mode
@@ -244,7 +250,6 @@ we handle here."
                  'append)
     (setq nix-modeline--status-text (propertize nix-modeline-default-text
                                                 'face 'nix-modeline-idle-face))
-    (nix-modeline--start-watchers)
     (nix-modeline--callback))
    (t
     (setq global-mode-string
