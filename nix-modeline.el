@@ -109,8 +109,8 @@ Note: the first %s in this variable gets replaced by the value of
 (defcustom nix-modeline-delay 0.1
   "The delay between when nix-modeline triggers and when it updates.
 
-This value is in seconds. Short (microsecond) delays help coalesce file watcher
-events, and prevent race conditions in nix-modeline during lengthy Nix builds."
+This value is in seconds. Short delays help coalesce file watcher events, and
+prevent race conditions in nix-modeline during lengthy Nix builds."
   :type 'number)
 
 (defcustom nix-modeline-hook nil
@@ -137,6 +137,8 @@ events, and prevent race conditions in nix-modeline during lengthy Nix builds."
 
 (defvar nix-modeline--status-text ""
   "The string representing the current Nix builder status.")
+
+(defvar nix-modeline-mode)
 
 (defun nix-modeline--error (msg)
   "Set nix-modeline to the error state and print MSG."
@@ -189,7 +191,10 @@ we handle here."
      :buffer nil
      :command (split-string (format nix-modeline-pgrep-string
                                     (nix-modeline--pgrep-users)
-                                    (string-replace "\\" "" nix-modeline-process-regex))
+                                    (replace-regexp-in-string
+                                     "\\\\"
+                                     ""
+                                     nix-modeline-process-regex))
                             nil 'omit-nulls)
      :filter 'nix-modeline--pgrep-filter
      :sentinel 'nix-modeline--pgrep-sentinel
