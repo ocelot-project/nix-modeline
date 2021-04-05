@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2021 Jordan Mulcahey
 
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Author: Jordan Mulcahey <snhjordy@gmail.com>
 ;; Description: Show in-progress Nix evaluations on your modeline
 ;; URL: https://github.com/ocelot-project/nix-modeline
