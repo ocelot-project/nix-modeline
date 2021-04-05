@@ -16,14 +16,9 @@
         pname = "nix-modeline";
         version = "1.0.0";
         src = self;
-        buildInputs = [ pkgs.emacs pkgs.entr ];
+        buildInputs = [ pkgs.emacs ];
         recipe = pkgs.writeText "recipe" ''
           (nix-modeline :fetcher git :url "localhost")
-        '';
-        prePatch = ''
-          substituteInPlace nix-modeline.el \
-          --replace 'defcustom nix-modeline-entr-command "entr"' \
-          'defcustom nix-modeline-entr-command "${pkgs.entr}/bin/entr"'
         '';
         buildPhase = ''
           emacs -L . --batch -f batch-byte-compile *.el
