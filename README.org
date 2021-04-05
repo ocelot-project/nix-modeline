@@ -89,6 +89,12 @@ tap into, as well as any usable standardized operation logs. If there's enough
 popular demand for the feature, getting an event stream implemented in Nix isn't
 out of the realm of possibility.
 
+*** The text that ~nix-modeline~ displays looks weird.
+The default text that ~nix-modeline~ displays uses Unicode characters that your
+Emacs font might not support. The variables used to control this text look like
+~nix-modeline-*-text~; change their value to a string that doesn't contain
+Unicode chraracters, and toggle ~nix-modeline~ off and on again.
+
 *** I like this idea, but I don't use Emacs.
 That's a shame. Previous iterations of ~nix-modeline~ utilized a shell scripting
 oriented approach, based around [[http://eradman.com/entrproject/][~entr~]]:
