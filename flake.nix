@@ -14,7 +14,7 @@
     packages.nix-modeline =
       pkgs.stdenv.mkDerivation {
         pname = "nix-modeline";
-        version = "1.0.0";
+        version = "1.1.0";
         src = self;
         buildInputs = [ pkgs.emacs ];
         recipe = pkgs.writeText "recipe" ''
