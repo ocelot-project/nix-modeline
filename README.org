@@ -39,6 +39,14 @@ at when running on an unsupported operating system.
 #+END_SRC
 
 *** Imperative Install
+**** From MELPA
+~nix-modeline~ is available on [[https://melpa.org/][MELPA]]. If MELPA is part of your configured
+~package-archives~, installing should be as simple as choosing ~nix-modeline~ in
+the ~list-packages~ interface. Note that Emacs distributions like Doom,
+Spacemacs, and Prelude will be configured to use MELPA, but generally have their
+own way of configuring packages. See your distro's manual for information.
+
+**** From Github
 - First, clone ~nix-modeline~:
 #+BEGIN_SRC bash
 git clone https://github.com/ocelot-project/nix-modeline.git
